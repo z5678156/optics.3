@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双缝干涉实验模拟</title>
+<style>
+:root {
+  --bg: #0b1120;
+  --card: rgba(15, 23, 42, 0.75);
+  --card-border: rgba(56, 189, 248, 0.18);
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --glow: rgba(56, 189, 248, 0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height:100vh;
+  padding:24px 20px 40px;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(56,189,248,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(129,140,248,0.05) 0%, transparent 50%);
+}
+.container{ max-width:1200px; margin:0 auto; }
+
+/* ---- 顶部 ---- */
+.header{
+  text-align:center; margin-bottom:28px;
+}
+.header h1{
+  font-size:30px; font-weight:700;
+  background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:2px;
+}
+.header p{ color:var(--text2); font-size:14px; margin-top:6px; }
+
+/* ---- 模式切换标签 ---- */
+.mode-tabs{
+  display:flex; justify-content:center; gap:12px; margin-bottom:24px;
+}
+.mode-tab{
+  padding:10px 28px; border-radius:30px; font-size:15px; font-weight:600;
+  border:1.5px solid var(--card-border); background:var(--card);
+  color:var(--text2); cursor:pointer; transition:all .3s;
+  backdrop-filter:blur(12px);
+}
+.mode-tab.active{
+  border-color:var(--accent); color:var(--accent);
+  box-shadow:0 0 18px var(--glow);
+  background:rgba(56,189,248,0.08);
+}
+.mode-tab:hover:not(.active){ border-color:rgba(56,189,248,0.4); color:var(--text); }
+
+/* ---- 主卡片 ---- */
+.main-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:20px;
+  padding:24px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  margin-bottom:20px;
+}
+.canvas-wrap{ position:relative; border-radius:14px; overflow:hidden; }
+canvas{ display:block; width:100%; height:auto; border-radius:14px; }
+
+/* ---- 参数面板（右下方浮动） ---- */
+.param-float{
+  position:absolute; top:16px; right:16px;
+  background:rgba(15,23,42,0.85);
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(56,189,248,0.25);
+  border-radius:14px;
+  padding:16px 20px;
+  min-width:200px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5);
+}
+.param-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.param-row:last-child{ border-bottom:none; }
+.param-label{ font-size:13px; color:var(--text2); }
+.param-value{ font-size:14px; font-weight:600; color:var(--accent); font-family:'Consolas',monospace; }
+.param-dot{
+  display:inline-block; width:10px; height:10px; border-radius:50%;
+  margin-right:6px; vertical-align:middle;
+}
+
+/* ---- 控制面板 ---- */
+.controls-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px;
+}
+.ctrl-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:14px;
+  padding:16px 18px;
+  backdrop-filter:blur(12px);
+  transition:border-color .3s;
+}
+.ctrl-card:hover{ border-color:rgba(56,189,248,0.35); }
+.ctrl-card label{
+  display:block; font-size:12px; color:var(--text2);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
+}
+.ctrl-card input[type=range]{
+  width:100%; height:6px; -webkit-appearance:none; appearance:none;
+  background:linear-gradient(90deg,rgba(56,189,248,0.3),rgba(129,140,248,0.3));
+  border-radius:3px; outline:none;
+}
+.ctrl-card input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:linear-gradient(135deg,#38bdf8,#818cf8);
+  box-shadow:0 0 10px var(--glow); cursor:pointer;
+}
+.ctrl-val{
+  text-align:right; font-size:16px; font-weight:700; margin-top:8px;
+  color:var(--accent); font-family:'Consolas',monospace;
+}
+
+/* ---- 预设按钮区 ---- */
+.presets-row{
+  display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;
+}
+.preset-btn{
+  padding:8px 18px; border-radius:20px; font-size:13px; font-weight:500;
+  border:1px solid var(--card-border); background:var(--card);
+  color:var(--text2); cursor:pointer; transition:all .25s;
+  backdrop-filter:blur(8px);
+}
+.preset-btn:hover{
+  border-color:var(--accent); color:var(--accent);
+  box-shadow:0 0 12px var(--glow);
+}
+.preset-btn.active-preset{
+  border-color:var(--accent); color:#fff;
+  background:rgba(56,189,248,0.15);
+}
+
+/* ---- 公式卡片 ---- */
+.formula-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:14px;
+  padding:20px 24px;
+  backdrop-filter:blur(12px);
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+}
+.formula-left{ font-size:14px; color:var(--text2); line-height:1.8; }
+.formula-left b{ color:var(--accent); font-weight:600; }
+.formula-right{
+  text-align:right; padding:12px 20px;
+  background:rgba(56,189,248,0.06); border-radius:10px;
+  border:1px solid rgba(56,189,248,0.12);
+}
+.formula-right .eq{ font-size:13px; color:var(--text2); margin-bottom:4px; }
+.formula-right .big{ font-size:20px; font-weight:700; color:var(--accent); font-style:italic; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 顶部 -->
+  <div class="header">
+    <h1>交互式物理模拟实验平台</h1>
+    <p>双缝干涉实验 · 实时可视化 · 参数可调</p>
+  </div>
+
+  <!-- 模式切换 -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="double" onclick="setMode('double')">双缝干涉</div>
+    <div class="mode-tab" data-mode="single" onclick="setMode('single')">单缝衍射</div>
+  </div>
+
+  <!-- 预设按钮 -->
+  <div class="presets-row">
+    <button class="preset-btn" onclick="applyPreset('green-ds')">🟢 绿光双缝</button>
+    <button class="preset-btn" onclick="applyPreset('red-ds')">🔴 红光双缝</button>
+    <button class="preset-btn" onclick="applyPreset('blue-ds')">🔵 蓝光双缝</button>
+    <button class="preset-btn" onclick="applyPreset('violet-ds')">🟣 紫光双缝</button>
+    <button class="preset-btn" onclick="applyPreset('wide')">📐 大缝距</button>
+    <button class="preset-btn" onclick="applyPreset('narrow')">📏 小缝距</button>
+  </div>
+
+  <!-- 画布区 -->
+  <div class="main-card">
+    <div class="canvas-wrap">
+      <canvas id="canvas" width="1160" height="460"></canvas>
+      <!-- 浮动参数面板 -->
+      <div class="param-float">
+        <div class="param-row">
+          <span class="param-label">条纹间距 Δy</span>
+          <span class="param-value" id="pDy">—</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">衍射包络宽度</span>
+          <span class="param-value" id="pCentral">—</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">可见条纹数</span>
+          <span class="param-value" id="pFringe">—</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">光色</span>
+          <span class="param-value" id="pColor">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 滑块控制 -->
+  <div class="controls-grid">
+    <div class="ctrl-card">
+      <label>光源波长 λ (nm)</label>
+      <input type="range" id="sLam" min="380" max="780" value="550">
+      <div class="ctrl-val" id="vLam">550 nm</div>
+    </div>
+    <div class="ctrl-card">
+      <label>双缝间距 d (μm)</label>
+      <input type="range" id="sD" min="10" max="500" value="100">
+      <div class="ctrl-val" id="vD">100 μm</div>
+    </div>
+    <div class="ctrl-card">
+      <label>单缝宽度 a (μm)</label>
+      <input type="range" id="sA" min="2" max="100" value="10">
+      <div class="ctrl-val" id="vA">10 μm</div>
+    </div>
+    <div class="ctrl-card">
+      <label>屏距 L (m)</label>
+      <input type="range" id="sL" min="0.3" max="5.0" step="0.1" value="1.0">
+      <div class="ctrl-val" id="vL">1.0 m</div>
+    </div>
+  </div>
+
+  <!-- 公式卡片 -->
+  <div class="formula-card">
+    <div class="formula-left">
+      当前参数：<b>λ = <span id="fLam"></span> nm</b> ｜ <b>d = <span id="fD"></span> μm</b> ｜ <b>a = <span id="fA"></span> μm</b> ｜ <b>L = <span id="fL"></span> m</b><br>
+      理论条纹间距：<b>Δy = λL / d ≈ <span id="fDy"></span> mm</b><br>
+      衍射包络宽度：<b>W₀ = 2λL / a ≈ <span id="fW0"></span> mm</b>
+    </div>
+    <div class="formula-right">
+      <div class="eq">核心公式</div>
+      <div class="big">I = I₀ · cos²β · (sin α / α)²</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== 物理计算核心 ====== */
+let mode = 'double'; // 'double' | 'single'
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+  draw();
+}
+
+/* 波长→RGB精确映射（基于CIE色度近似） */
+function lamToRGB(lam) {
+  let r=0, g=0, b=0;
+  if(lam>=380 && lam<440){ r=-(lam-440)/(440-380); b=1; }
+  else if(lam>=440 && lam<490){ g=(lam-440)/(490-440); b=1; }
+  else if(lam>=490 && lam<510){ g=1; b=-(lam-510)/(510-490); }
+  else if(lam>=510 && lam<580){ r=(lam-510)/(580-510); g=1; }
+  else if(lam>=580 && lam<645){ r=1; g=-(lam-645)/(645-580); }
+  else if(lam>=645 && lam<=780){ r=1; }
+  let f=1;
+  if(lam>=380 && lam<420) f=0.3+0.7*(lam-380)/40;
+  else if(lam>645 && lam<=780) f=0.3+0.7*(780-lam)/135;
+  return [Math.round(r*f*255), Math.round(g*f*255), Math.round(b*f*255)];
+}
+
+function getColorName(lam){
+  if(lam<450) return "紫光"; if(lam<495) return "蓝光";
+  if(lam<570) return "绿光"; if(lam<590) return "黄光";
+  if(lam<620) return "橙光"; return "红光";
+}
+
+/* ====== 渲染 ====== */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function draw() {
+  const lam_nm = +document.getElementById('sLam').value;
+  const d_um = +document.getElementById('sD').value;
+  const a_um = +document.getElementById('sA').value;
+  const L_m = +document.getElementById('sL').value;
+
+  const lam = lam_nm * 1e-9;
+  const d = d_um * 1e-6;
+  const a = a_um * 1e-6;
+  const L = L_m;
+
+  const [R,G,B] = lamToRGB(lam_nm);
+  const colorStr = `rgb(${R},${G},${B})`;
+
+  // 更新UI数值
+  document.getElementById('vLam').textContent = lam_nm + ' nm';
+  document.getElementById('vD').textContent = d_um + ' μm';
+  document.getElementById('vA').textContent = a_um + ' μm';
+  document.getElementById('vL').textContent = L_m.toFixed(1) + ' m';
+
+  document.getElementById('fLam').textContent = lam_nm;
+  document.getElementById('fD').textContent = d_um;
+  document.getElementById('fA').textContent = a_um;
+  document.getElementById('fL').textContent = L_m.toFixed(1);
+
+  const W = canvas.width, H = canvas.height;
+  const topH = Math.floor(H * 0.62); // 上半部：条纹
+  ctx.fillStyle = '#070d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  /* ---- 绘制装置示意图（左侧） ---- */
+  const slitX = 55;
+  ctx.strokeStyle = 'rgba(148,163,184,0.5)';
+  ctx.lineWidth = 3;
+  // 光源
+  const gR = ctx.createRadialGradient(14, H/2, 0, 14, H/2, 28);
+  gR.addColorStop(0, `rgba(${R},${G},${B},0.9)`);
+  gR.addColorStop(0.5, `rgba(${R},${G},${B},0.3)`);
+  gR.addColorStop(1, `rgba(${R},${G},${B},0)`);
+  ctx.fillStyle = gR;
+  ctx.beginPath(); ctx.arc(14, H/2, 28, 0, Math.PI*2); ctx.fill();
+  // 光源标签
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('S', 6, H/2 + 42);
+
+  // 缝板
+  ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+  ctx.lineWidth = 3;
+  const gap = mode === 'double' ? 22 : 0;
+  ctx.beginPath(); ctx.moveTo(slitX, 0); ctx.lineTo(slitX, H/2 - gap - 8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(slitX, H/2 + gap + 8); ctx.lineTo(slitX, H); ctx.stroke();
+  if(mode === 'double'){
+    ctx.beginPath(); ctx.moveTo(slitX, H/2 - gap + 8); ctx.lineTo(slitX, H/2 + gap - 8); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.font = '11px sans-serif';
+  ctx.fillText(mode==='double'?'双缝':'单缝', slitX - 14, H/2 + 55);
+
+  // 分隔线
+  ctx.setLineDash([5,5]);
+  ctx.strokeStyle = 'rgba(56,189,248,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(slitX + 2, 0); ctx.lineTo(slitX + 2, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, topH); ctx.lineTo(W, topH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* ---- 物理计算 ---- */
+  const N = W - slitX - 30;
+  const yMax = L * 0.08; // 显示±8cm范围
+  const k = 2 * Math.PI / lam;
+  const I = new Float64Array(N);
+  let Imax = 0;
+
+  for(let i = 0; i < N; i++){
+    const y = (i - N/2) / (N/2) * yMax;
+    const sinT = y / Math.sqrt(y*y + L*L); // 精确角度
+    const beta = k * d * sinT / 2;
+    const alpha = k * a * sinT / 2;
+    const env = Math.abs(alpha) < 1e-10 ? 1 : (Math.sin(alpha)/alpha)**2;
+    const int = mode === 'double' ? env * (Math.cos(beta)**2) : env;
+    I[i] = int;
+    if(int > Imax) Imax = int;
+  }
+
+  /* ---- 绘制干涉条纹 ---- */
+  for(let i = 0; i < N; i++){
+    const v = I[i] / Imax;
+    const alpha = Math.max(0, Math.min(1, v));
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
+    ctx.fillRect(i + slitX + 3, 0, 2, topH);
+  }
+
+  /* ---- 绘制光强曲线 ---- */
+  ctx.strokeStyle = colorStr;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for(let i = 0; i < N; i++){
+    const yy = H - 16 - (I[i]/Imax) * (H - topH - 32);
+    if(i===0) ctx.moveTo(i + slitX + 3, yy);
+    else ctx.lineTo(i + slitX + 3, yy);
+  }
+  ctx.stroke();
+
+  // 曲线填充
+  ctx.lineTo(N + slitX + 3, H - 16);
+  ctx.lineTo(slitX + 3, H - 16);
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${R},${G},${B},0.08)`;
+  ctx.fill();
+
+  // 中心线
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = 'rgba(56,189,248,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(N/2 + slitX + 3, 0);
+  ctx.lineTo(N/2 + slitX + 3, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* ---- 计算并显示参数面板 ---- */
+  const dy = lam * L / d;              // 条纹间距 (m)
+  const w0 = 2 * lam * L / a;          // 衍射包络宽度 (m)
+  const visibleFringes = mode === 'double'
+    ? Math.floor(2 * d / a) + 1       // 可见条纹数
+    : 1;
+
+  document.getElementById('pDy').textContent = (dy * 1e3).toFixed(2) + ' mm';
+  document.getElementById('pCentral').textContent = (w0 * 1e3).toFixed(1) + ' mm';
+  document.getElementById('pFringe').textContent = visibleFringes + ' 条';
+  document.getElementById('pColor').innerHTML =
+    `<span class="param-dot" style="background:${colorStr}"></span>${lam_nm} nm`;
+
+  document.getElementById('fDy').textContent = (dy * 1e3).toFixed(4);
+  document.getElementById('fW0').textContent = (w0 * 1e3).toFixed(3);
+}
+
+/* ====== 事件绑定 ====== */
+['sLam','sD','sA','sL'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { clearPresets(); draw(); });
+});
+
+/* ====== 预设功能 ====== */
+function clearPresets(){
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active-preset'));
+}
+
+function applyPreset(name){
+  clearPresets();
+  event.target.classList.add('active-preset');
+  const presets = {
+    'green-ds': {lam:550, d:100, a:10, L:1.0, mode:'double'},
+    'red-ds':   {lam:650, d:120, a:12, L:1.5, mode:'double'},
+    'blue-ds':  {lam:450, d:80,  a:8,  L:1.0, mode:'double'},
+    'violet-ds':{lam:405, d:60,  a:6,  L:0.8, mode:'double'},
+    'wide':     {lam:550, d:400, a:15, L:1.0, mode:'double'},
+    'narrow':   {lam:550, d:20,  a:5,  L:1.0, mode:'double'},
+  };
+  const p = presets[name];
+  document.getElementById('sLam').value = p.lam;
+  document.getElementById('sD').value = p.d;
+  document.getElementById('sA').value = p.a;
+  document.getElementById('sL').value = p.L;
+  setMode(p.mode);
+}
+
+// 初始化
+draw();
+</script>
+</body>
+</html>
